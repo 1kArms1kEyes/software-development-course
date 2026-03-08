@@ -1,10 +1,10 @@
 from django.db import models
 
 from api.products.models import Product
+from api.users.models import User
 
 
 class Comment(models.Model):
-    user = models.CharField(max_length=50)
     date = models.DateField()
     email = models.CharField(
         max_length=100,
@@ -13,7 +13,5 @@ class Comment(models.Model):
     )
     comment = models.TextField()
 
-    def __str__(self):
-        return f"{self.user} - {self.date}"
-
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
