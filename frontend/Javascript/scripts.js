@@ -135,36 +135,41 @@ renderTable(allProducts);
   };
 
   /* ✅ EDIT BUTTON LOGIC */
-  window.prepareEdit = (id) => {
+ window.prepareEdit = (id) => {
+  const product = allProducts.find(p => p.id === id);
+  if (!product) return;
 
-    const product = allProducts.find(p => p.id === id);
-    if (!product) return;
+  editingProductId = id;
 
-    editingProductId = id;
+  // Update modal title
+  document.querySelector('#productModal .modal-title').textContent = "Editar Dispositivo";
 
-    document.querySelector('#productModal .modal-title')
-    .textContent = "Editar Dispositivo";
-    document.getElementById('productName').value = product.name;
-    document.getElementById('productBrand').value = product.brand;
-    document.getElementById('productRam').value = product.ram;
-    document.getElementById('productStorage').value = product.storage;
-    document.getElementById('productReleaseDate').value = product.release_date;
-    document.getElementById('productBattery').value = product.max_battery;
-    document.getElementById('productMainCam').value = product.main_camera_res;
-    document.getElementById('productSelfieCam').value = product.selfie_camera_res;
-    document.getElementById('productNfc').checked = product.has_nfc;
-    document.getElementById('productJack').checked = product.has_headphone_jack;
-    document.getElementById('productImage').value = product.product_image;
-    document.getElementById('productDescription').value = product.synopsis;
-    document.getElementById('productColor').value = product.color;
-    document.getElementById('productNetwork').value = product.max_supported_network;
-    document.getElementById('productOS').value = product.operating_system;
+  // Set input values (IDs)
+  document.getElementById('productName').value = product.name;
+  document.getElementById('productBrand').value = product.brand.id;
+  document.getElementById('productRam').value = product.ram;
+  document.getElementById('productStorage').value = product.storage;
+  document.getElementById('productReleaseDate').value = product.release_date;
+  document.getElementById('productBattery').value = product.max_battery;
+  document.getElementById('productMainCam').value = product.main_camera_res;
+  document.getElementById('productSelfieCam').value = product.selfie_camera_res;
+  document.getElementById('productNfc').checked = product.has_nfc;
+  document.getElementById('productJack').checked = product.has_headphone_jack;
+  document.getElementById('productImage').value = product.product_image;
+  document.getElementById('productDescription').value = product.synopsis;
+  document.getElementById('productColor').value = product.color.id;
+  document.getElementById('productNetwork').value = product.max_supported_network.id;
+  document.getElementById('productOS').value = product.operating_system.id;
 
-    new bootstrap.Modal(
-      document.getElementById('productModal')
-    ).show();
-  };
+  // ✅ Update small labels with human-readable names
+  document.getElementById('productBrandName').textContent = product.brand.name;
+  document.getElementById('productColorName').textContent = product.color.name;
+  document.getElementById('productNetworkName').textContent = product.max_supported_network.name;
+  document.getElementById('productOSName').textContent = product.operating_system.name;
 
+  // Show modal
+  new bootstrap.Modal(document.getElementById('productModal')).show();
+};
   // Search / filter
   const searchInput = document.getElementById('searchInput');
   if (searchInput) {

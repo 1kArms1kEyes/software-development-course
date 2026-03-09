@@ -75,6 +75,44 @@
 </table>
 </div>
 </div>
+
+<div class="d-flex justify-content-end mt-3">
+  <button id="generateReportsBtn" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#reportModal">
+    Generar Reportes
+  </button>
+</div>
+
+<div class="modal fade" id="reportModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-dark text-white border-0">
+        <h5 class="modal-title">Generar Reporte</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="mb-3 d-flex align-items-center justify-content-between">
+          <label class="form-label fw-bold mb-0">Tipo de Reporte</label>
+          <select class="form-select w-auto" id="reportType">
+            <option value="productos_cargados">Reporte de Productos Cargados</option>
+            <option value="productos_comentarios">Reporte de Productos con Comentarios</option>
+          </select>
+        </div>
+        <div class="mb-3 d-flex align-items-center justify-content-between">
+          <label class="form-label fw-bold mb-0">Formato</label>
+          <select class="form-select w-auto" id="reportFormat">
+            <option value="excel">Excel</option>
+            <option value="pdf">PDF</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success" id="generateReportBtn">Generar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </main>
  
     <div class="modal fade" id="productModal" tabindex="-1" aria-hidden="true">
@@ -92,8 +130,9 @@
 <input type="text" id="productName" class="form-control" placeholder="Ej: Motorola Edge 50 Pro" required>
 </div>
 <div class="col-md-4">
-<label class="form-label small fw-bold">ID Marca</label>
-<input type="number" id="productBrand" class="form-control" placeholder="Ej: 3" required>
+  <label class="form-label small fw-bold">Marca</label>
+  <input type="number" id="productBrand" class="form-control" placeholder="ID Marca" required>
+  <small id="productBrandName" class="text-muted"></small>
 </div>
 <div class="col-md-3">
 <label class="form-label small fw-bold">RAM (GB)</label>
@@ -112,8 +151,9 @@
 <input type="number" id="productBattery" class="form-control" required>
 </div>
 <div class="col-md-3">
-<label class="form-label small fw-bold">ID Color</label>
-<input type="number" id="productColor" class="form-control" required>
+  <label class="form-label small fw-bold">Color</label>
+  <input type="number" id="productColor" class="form-control" placeholder="ID Color" required>
+  <small id="productColorName" class="text-muted"></small>
 </div>
 <div class="col-md-4">
 <label class="form-label small fw-bold">Cámara Trasera (MP)</label>
@@ -124,8 +164,9 @@
 <input type="number" id="productSelfieCam" class="form-control" required>
 </div>
 <div class="col-md-4">
-<label class="form-label small fw-bold">ID Red Máxima</label>
-<input type="number" id="productNetwork" class="form-control" required>
+  <label class="form-label small fw-bold">Red Máxima</label>
+  <input type="number" id="productNetwork" class="form-control" placeholder="ID Red Máxima" required>
+  <small id="productNetworkName" class="text-muted"></small>
 </div>
 <div class="col-md-6">
 <div class="form-check form-switch pt-2">
@@ -140,8 +181,9 @@
 </div>
 </div>
 <div class="col-md-6">
-<label class="form-label small fw-bold">ID Sistema Operativo</label>
-<input type="number" id="productOS" class="form-control" value="1" required>
+  <label class="form-label small fw-bold">Sistema Operativo</label>
+  <input type="number" id="productOS" class="form-control" placeholder="ID Sistema Operativo" required>
+  <small id="productOSName" class="text-muted"></small>
 </div>
 <div class="col-md-6">
 <label class="form-label small fw-bold">URL de Imagen</label>
