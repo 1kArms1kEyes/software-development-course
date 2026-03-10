@@ -5,118 +5,105 @@
 const API_BASE = "http://127.0.0.1:8000/api";
 
 document.addEventListener("DOMContentLoaded", () => {
+  /* =========================
+     1. CONFIGURATION & UTILITIES
+  ========================= */
 
-/* =========================
-   1. CONFIGURATION & UTILITIES
-========================= */
+  // Prevent XSS / HTML injection
+  const escapeHtml = (str) =>
+    String(str).replace(
+      /[&<>"']/g,
+      (s) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[s],
+    );
 
-// Prevent XSS / HTML injection
-const escapeHtml = (str) =>
-  String(str).replace(/[&<>"']/g, s => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-  }[s]));
+  // Toast notifications
+  const showToast = (msg) => {
+    const toastEl = document.getElementById("appToast");
 
-// Toast notifications
-const showToast = (msg) => {
-  const toastEl = document.getElementById('appToast');
+    if (toastEl) {
+      const body = document.getElementById("toastBody");
+      if (body) body.textContent = msg;
+      new bootstrap.Toast(toastEl).show();
+    } else {
+      alert(msg);
+    }
+  };
 
-  if (toastEl) {
-    const body = document.getElementById('toastBody');
-    if (body) body.textContent = msg;
-    new bootstrap.Toast(toastEl).show();
-  } else {
-    alert(msg);
-  }
-};
+  /* =========================
+     2. LOGIN (index.html)
+  ========================= */
 
+  const loginForm = document.getElementById("loginForm");
 
-/* =========================
-   2. LOGIN (index.html)
-========================= */
+  if (loginForm) {
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
 
-const loginForm = document.getElementById('loginForm');
+      const username = document.getElementById("username")?.value.trim();
+      const password = document.getElementById("password")?.value;
 
-if (loginForm) {
+      try {
+        const res = await fetch(`${API_BASE}/login/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        });
 
-  loginForm.addEventListener('submit', async (e) => {
+        if (res.ok) {
+          const data = await res.json();
+          sessionStorage.setItem("auth", JSON.stringify(data));
 
-    e.preventDefault();
-
-    const username = document.getElementById('username')?.value.trim();
-    const password = document.getElementById('password')?.value;
-
-    try {
-
-      const res = await fetch(`${API_BASE}/login/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
-
-      if (res.ok) {
-
-        const data = await res.json();
-        sessionStorage.setItem('auth', JSON.stringify(data));
-
-        window.location.href = 'productos.html';
-
-      } else {
-
-        const alertEl = document.getElementById('loginAlert');
-        if (alertEl) alertEl.classList.remove('d-none');
-
+          window.location.href = "productos.html";
+        } else {
+          const alertEl = document.getElementById("loginAlert");
+          if (alertEl) alertEl.classList.remove("d-none");
+        }
+      } catch (err) {
+        console.error("Login error:", err);
+        showToast("Error: No hay conexión con el servidor.");
       }
+    });
+  }
 
-    } catch (err) {
+  /* =========================
+     3. ADMIN PRODUCTS & CRUD (productos.html)
+  ========================= */
 
-      console.error("Login error:", err);
-      showToast("Error: No hay conexión con el servidor.");
+  const tbody = document.getElementById("productsTbody");
 
+  if (tbody) {
+    if (window.location.pathname.endsWith("productos.html")) {
+      const auth = sessionStorage.getItem("auth");
+      if (!auth) window.location.href = "index.html";
     }
 
-  });
+    let allProducts = [];
+    let editingProductId = null;
 
-}
+    const addProductBtn = document.getElementById("addProductBtn");
 
+    if (addProductBtn) {
+      addProductBtn.addEventListener("click", () => {
+        editingProductId = null;
 
-/* =========================
-   3. ADMIN PRODUCTS & CRUD (productos.html)
-========================= */
+        document.getElementById("productForm")?.reset();
 
-const tbody = document.getElementById('productsTbody');
+        const title = document.querySelector("#productModal .modal-title");
+        if (title) title.textContent = "Nuevo Dispositivo";
+      });
+    }
 
-if (tbody) {
-
-  if (window.location.pathname.endsWith('productos.html')) {
-
-    const auth = sessionStorage.getItem('auth');
-    if (!auth) window.location.href = 'index.html';
-
-  }
-
-  let allProducts = [];
-  let editingProductId = null;
-
-  const addProductBtn = document.getElementById("addProductBtn");
-
-  if (addProductBtn) {
-
-    addProductBtn.addEventListener('click', () => {
-
-      editingProductId = null;
-
-      document.getElementById('productForm')?.reset();
-
-      const title = document.querySelector('#productModal .modal-title');
-      if (title) title.textContent = "Nuevo Dispositivo";
-
-    });
-
-  }
-
-  const renderTable = (data) => {
-
-tbody.innerHTML = data.map(p => `
+    const renderTable = (data) => {
+      tbody.innerHTML = data
+        .map(
+          (p) => `
 <tr>
 
 <td class="ps-4">${p.id}</td>
@@ -174,397 +161,390 @@ Eliminar
 </td>
 
 </tr>
-`).join('');
+`,
+        )
+        .join("");
 
-    const totalCountEl = document.getElementById('totalCount');
-    if (totalCountEl) totalCountEl.textContent = data.length;
-
-  };
-
-
-  const loadProducts = async () => {
-
-    try {
-
-      const res = await fetch(`${API_BASE}/products/`);
-
-      if (!res.ok) throw new Error("Error connecting to API");
-
-      allProducts = await res.json();
-
-      allProducts.sort((a, b) => a.id - b.id);
-
-      renderTable(allProducts);
-
-    } catch (err) {
-
-      console.error("Load error:", err);
-      showToast("Error: No se pudieron cargar los productos.");
-
-    }
-
-  };
-
-
-  window.prepareEdit = (id) => {
-
-    const product = allProducts.find(p => p.id === id);
-    if (!product) return;
-
-    editingProductId = id;
-
-    const title = document.querySelector('#productModal .modal-title');
-    if (title) title.textContent = "Editar Dispositivo";
-
-    document.getElementById('productName').value = product.name;
-    document.getElementById('productBrand').value = product.brand.id;
-    document.getElementById('productRam').value = product.ram;
-    document.getElementById('productStorage').value = product.storage;
-    document.getElementById('productReleaseDate').value = product.release_date;
-
-    document.getElementById('productBattery').value = product.max_battery;
-    document.getElementById('productMainCam').value = product.main_camera_res;
-    document.getElementById('productSelfieCam').value = product.selfie_camera_res;
-
-    document.getElementById('productNfc').checked = product.has_nfc;
-    document.getElementById('productJack').checked = product.has_headphone_jack;
-
-    document.getElementById('productImage').value = product.product_image;
-    document.getElementById('productDescription').value = product.synopsis;
-
-    document.getElementById('productColor').value = product.color.id;
-    document.getElementById('productNetwork').value = product.max_supported_network.id;
-    document.getElementById('productOS').value = product.operating_system.id;
-
-
-        new bootstrap.Modal(document.getElementById('productModal')).show();
-
-  };
-
-
-  const searchInput = document.getElementById('searchInput');
-
-  if (searchInput) {
-
-    searchInput.oninput = (e) => {
-
-      const term = e.target.value.toLowerCase();
-
-      const filtered = allProducts.filter(p =>
-        p.name.toLowerCase().includes(term)
-      );
-
-      renderTable(filtered);
-
+      const totalCountEl = document.getElementById("totalCount");
+      if (totalCountEl) totalCountEl.textContent = data.length;
     };
 
-  }
-
-
-  const productForm = document.getElementById('productForm');
-
-  if (productForm) {
-
-    productForm.onsubmit = async (e) => {
-
-      e.preventDefault();
-
-      const payload = {
-
-        name: document.getElementById('productName').value,
-        brand: parseInt(document.getElementById('productBrand').value),
-
-        ram: parseInt(document.getElementById('productRam').value),
-        storage: parseInt(document.getElementById('productStorage').value),
-
-        max_battery: parseInt(document.getElementById('productBattery').value),
-
-        main_camera_res: parseInt(document.getElementById('productMainCam').value),
-        selfie_camera_res: parseInt(document.getElementById('productSelfieCam').value),
-
-        has_nfc: document.getElementById('productNfc').checked,
-        has_headphone_jack: document.getElementById('productJack').checked,
-
-        product_image: document.getElementById('productImage').value,
-
-        release_date: document.getElementById('productReleaseDate').value,
-
-        synopsis: document.getElementById('productDescription').value,
-
-        color: parseInt(document.getElementById('productColor').value),
-
-        max_supported_network: parseInt(document.getElementById('productNetwork').value),
-
-        operating_system: parseInt(document.getElementById('productOS').value)
-
-      };
-
+    const loadProducts = async () => {
       try {
+        const res = await fetch(`${API_BASE}/products/`);
 
-        const url = editingProductId
-          ? `${API_BASE}/products/${editingProductId}/`
-          : `${API_BASE}/products/`;
+        if (!res.ok) throw new Error("Error connecting to API");
 
-        const method = editingProductId ? 'PATCH' : 'POST';
+        allProducts = await res.json();
 
-        const res = await fetch(url, {
+        allProducts.sort((a, b) => a.id - b.id);
 
-          method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+        renderTable(allProducts);
+      } catch (err) {
+        console.error("Load error:", err);
+        showToast("Error: No se pudieron cargar los productos.");
+      }
+    };
 
+    window.prepareEdit = (id) => {
+      const product = allProducts.find((p) => p.id === id);
+      if (!product) return;
+
+      editingProductId = id;
+
+      const title = document.querySelector("#productModal .modal-title");
+      if (title) title.textContent = "Editar Dispositivo";
+
+      document.getElementById("productName").value = product.name;
+      document.getElementById("productBrand").value = product.brand.id;
+      document.getElementById("productRam").value = product.ram;
+      document.getElementById("productStorage").value = product.storage;
+      document.getElementById("productReleaseDate").value =
+        product.release_date;
+
+      document.getElementById("productBattery").value = product.max_battery;
+      document.getElementById("productMainCam").value = product.main_camera_res;
+      document.getElementById("productSelfieCam").value =
+        product.selfie_camera_res;
+
+      document.getElementById("productNfc").checked = product.has_nfc;
+      document.getElementById("productJack").checked =
+        product.has_headphone_jack;
+
+      document.getElementById("productImage").value = product.product_image;
+      document.getElementById("productDescription").value = product.synopsis;
+
+      document.getElementById("productColor").value = product.color.id;
+      document.getElementById("productNetwork").value =
+        product.max_supported_network.id;
+      document.getElementById("productOS").value = product.operating_system.id;
+
+      new bootstrap.Modal(document.getElementById("productModal")).show();
+    };
+
+    const searchInput = document.getElementById("searchInput");
+
+    if (searchInput) {
+      searchInput.oninput = (e) => {
+        const term = e.target.value.toLowerCase();
+
+        const filtered = allProducts.filter((p) =>
+          p.name.toLowerCase().includes(term),
+        );
+
+        renderTable(filtered);
+      };
+    }
+
+    const productForm = document.getElementById("productForm");
+
+    if (productForm) {
+      productForm.onsubmit = async (e) => {
+        e.preventDefault();
+
+        const payload = {
+          name: document.getElementById("productName").value,
+          brand: parseInt(document.getElementById("productBrand").value),
+
+          ram: parseInt(document.getElementById("productRam").value),
+          storage: parseInt(document.getElementById("productStorage").value),
+
+          max_battery: parseInt(
+            document.getElementById("productBattery").value,
+          ),
+
+          main_camera_res: parseInt(
+            document.getElementById("productMainCam").value,
+          ),
+          selfie_camera_res: parseInt(
+            document.getElementById("productSelfieCam").value,
+          ),
+
+          has_nfc: document.getElementById("productNfc").checked,
+          has_headphone_jack: document.getElementById("productJack").checked,
+
+          product_image: document.getElementById("productImage").value,
+
+          release_date: document.getElementById("productReleaseDate").value,
+
+          synopsis: document.getElementById("productDescription").value,
+
+          color: parseInt(document.getElementById("productColor").value),
+
+          max_supported_network: parseInt(
+            document.getElementById("productNetwork").value,
+          ),
+
+          operating_system: parseInt(
+            document.getElementById("productOS").value,
+          ),
+        };
+
+        try {
+          const url = editingProductId
+            ? `${API_BASE}/products/${editingProductId}/`
+            : `${API_BASE}/products/`;
+
+          const method = editingProductId ? "PATCH" : "POST";
+
+          const res = await fetch(url, {
+            method,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          if (res.ok) {
+            bootstrap.Modal.getInstance(
+              document.getElementById("productModal"),
+            )?.hide();
+
+            productForm.reset();
+
+            editingProductId = null;
+
+            showToast(
+              method === "PATCH" ? "Producto actualizado" : "Producto guardado",
+            );
+
+            loadProducts();
+          }
+        } catch (err) {
+          console.error(err);
+          showToast("Error al conectar con la API.");
+        }
+      };
+    }
+
+    window.prepareDelete = (id, name) => {
+      const idField = document.getElementById("deleteId");
+      const namePreview = document.getElementById("deleteNamePreview");
+
+      if (idField) idField.value = id;
+      if (namePreview) namePreview.textContent = name;
+
+      new bootstrap.Modal(document.getElementById("confirmDeleteModal")).show();
+    };
+
+    const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
+
+    if (confirmDeleteBtn) {
+      confirmDeleteBtn.onclick = async () => {
+        const id = document.getElementById("deleteId").value;
+
+        const res = await fetch(`${API_BASE}/products/${id}/`, {
+          method: "DELETE",
         });
 
         if (res.ok) {
+          bootstrap.Modal.getInstance(
+            document.getElementById("confirmDeleteModal"),
+          )?.hide();
 
-          bootstrap.Modal
-            .getInstance(document.getElementById('productModal'))
-            ?.hide();
-
-          productForm.reset();
-
-          editingProductId = null;
-
-          showToast(
-            method === 'PATCH'
-              ? "Producto actualizado"
-              : "Producto guardado"
-          );
+          showToast("Producto eliminado");
 
           loadProducts();
-
         }
-
-      } catch (err) {
-
-        console.error(err);
-        showToast("Error al conectar con la API.");
-
-      }
-
-    };
-
-  }
-
-
-  window.prepareDelete = (id, name) => {
-
-    const idField = document.getElementById('deleteId');
-    const namePreview = document.getElementById('deleteNamePreview');
-
-    if (idField) idField.value = id;
-    if (namePreview) namePreview.textContent = name;
-
-    new bootstrap.Modal(
-      document.getElementById('confirmDeleteModal')
-    ).show();
-
-  };
-
-
-  const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-
-  if (confirmDeleteBtn) {
-
-    confirmDeleteBtn.onclick = async () => {
-
-      const id = document.getElementById('deleteId').value;
-
-      const res = await fetch(
-        `${API_BASE}/products/${id}/`,
-        { method: 'DELETE' }
-      );
-
-      if (res.ok) {
-
-        bootstrap.Modal
-          .getInstance(document.getElementById('confirmDeleteModal'))
-          ?.hide();
-
-        showToast("Producto eliminado");
-
-        loadProducts();
-
-      }
-
-    };
-
-  }
-
-  loadProducts();
-
-}
-
-
-/* =========================
-   4. PRODUCT DETAILS & COMMENTS (detalle.html)
-========================= */
-
-const commentsList = document.getElementById('commentsList');
-
-if (commentsList) {
-
-  const productId = new URLSearchParams(window.location.search).get('id');
-
-
-  const loadDetail = async () => {
-
-    try {
-
-      const res = await fetch(`${API_BASE}/products/`);
-      const products = await res.json();
-
-      const p = products.find(x => x.id == productId);
-
-      if (!p) return;
-
-      document.getElementById('pName').textContent = p.name;
-      document.getElementById('breadcrumbProduct').textContent = p.name;
-
-      document.getElementById('pImg').src = p.product_image;
-      document.getElementById('pSynopsis').textContent = p.synopsis;
-
-      document.getElementById('pRam').textContent = `${p.ram} GB`;
-      document.getElementById('pStorage').textContent = `${p.storage} GB`;
-      document.getElementById('pBattery').textContent = `${p.max_battery} mAh`;
-
-      document.getElementById('pCam').textContent = `${p.main_camera_res} MP`;
-      document.getElementById('pSelfieCam').textContent = `${p.selfie_camera_res} MP`;
-
-      document.getElementById('pNfc').textContent = p.has_nfc ? "SÍ" : "NO";
-      document.getElementById('pJack').textContent = p.has_headphone_jack ? "SÍ" : "NO";
-
-      document.getElementById('pDate').textContent = p.release_date;
-
-      document.getElementById('pBrand').textContent = p.brand.name;
-      document.getElementById('pColor').textContent = p.color.name;
-      document.getElementById('pOS').textContent = p.operating_system.name;
-      document.getElementById('pNetwork').textContent = p.max_supported_network.name;
-
-    } catch (err) {
-
-      console.error("Error loading product detail:", err);
-      showToast("No se pudo cargar el producto");
-
+      };
     }
 
-  };
+    loadProducts();
+  }
 
+  /* =========================
+     4. PRODUCT DETAILS & COMMENTS (detalle.html)
+  ========================= */
 
-  const loadComments = async () => {
+  const commentsList = document.getElementById("commentsList");
 
-    try {
+  if (commentsList) {
+    const productId = new URLSearchParams(window.location.search).get("id");
 
-      const res = await fetch(`${API_BASE}/comments/`);
+    const loadDetail = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/products/`);
+        const products = await res.json();
 
-      const allComments = await res.json();
+        const p = products.find((x) => x.id == productId);
 
-      const filtered = allComments.filter(c => c.product == productId);
+        if (!p) return;
 
-      commentsList.innerHTML = filtered.map(c => `
+        document.getElementById("pName").textContent = p.name;
+        document.getElementById("breadcrumbProduct").textContent = p.name;
+
+        document.getElementById("pImg").src = p.product_image;
+        document.getElementById("pSynopsis").textContent = p.synopsis;
+
+        document.getElementById("pRam").textContent = `${p.ram} GB`;
+        document.getElementById("pStorage").textContent = `${p.storage} GB`;
+        document.getElementById("pBattery").textContent =
+          `${p.max_battery} mAh`;
+
+        document.getElementById("pCam").textContent = `${p.main_camera_res} MP`;
+        document.getElementById("pSelfieCam").textContent =
+          `${p.selfie_camera_res} MP`;
+
+        document.getElementById("pNfc").textContent = p.has_nfc ? "SÍ" : "NO";
+        document.getElementById("pJack").textContent = p.has_headphone_jack
+          ? "SÍ"
+          : "NO";
+
+        document.getElementById("pDate").textContent = p.release_date;
+
+        document.getElementById("pBrand").textContent = p.brand.name;
+        document.getElementById("pColor").textContent = p.color.name;
+        document.getElementById("pOS").textContent = p.operating_system.name;
+        document.getElementById("pNetwork").textContent =
+          p.max_supported_network.name;
+      } catch (err) {
+        console.error("Error loading product detail:", err);
+        showToast("No se pudo cargar el producto");
+      }
+    };
+
+    const loadComments = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/comments/`);
+
+        const allComments = await res.json();
+
+        const filtered = allComments.filter((c) => c.product == productId);
+
+        commentsList.innerHTML =
+          filtered
+            .map(
+              (c) => `
 <div class="card mb-2 p-2 shadow-sm border-0 small bg-light">
 <strong>${escapeHtml(c.user)}</strong>
 <p class="mb-0 text-muted">${escapeHtml(c.comment)}</p>
 </div>
-`).reverse().join('')
-      ||
-'<p class="text-center small text-muted py-4">No hay comentarios. Sé el primero!</p>';
-
-    } catch (err) {
-
-      console.error("Error loading comments:", err);
-
-    }
-
-  };
-
-
-  const commentForm = document.getElementById('commentForm');
-
-  if (commentForm) {
-
-    commentForm.onsubmit = async (e) => {
-
-      e.preventDefault();
-
-      const payload = {
-
-        user: document.getElementById('cUser').value.trim(),
-        email: "usuario_anonimo@inventario.com",
-
-        comment: document.getElementById('cText').value.trim(),
-
-        product: parseInt(productId),
-
-        date: new Date().toISOString().split('T')[0]
-
-      };
-
-      try {
-
-        const res = await fetch(`${API_BASE}/comments/`, {
-
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-
-        });
-
-        if (res.ok) {
-
-          e.target.reset();
-
-          showToast("Comentario enviado");
-
-          loadComments();
-
-        }
-
+`,
+            )
+            .reverse()
+            .join("") ||
+          '<p class="text-center small text-muted py-4">No hay comentarios. Sé el primero!</p>';
       } catch (err) {
-
-        console.error("Error posting comment:", err);
-
-        showToast("No se pudo enviar el comentario");
-
+        console.error("Error loading comments:", err);
       }
-
     };
 
+    const commentForm = document.getElementById("commentForm");
+
+    if (commentForm) {
+      commentForm.onsubmit = async (e) => {
+        e.preventDefault();
+
+        const auth = sessionStorage.getItem("auth");
+
+        // If user is not logged in → show login modal
+        if (!auth) {
+          const loginModal = new bootstrap.Modal(
+            document.getElementById("loginModal"),
+          );
+
+          loginModal.show();
+          return;
+        }
+
+        const userData = JSON.parse(auth);
+
+        const payload = {
+          user: userData.username,
+          email: userData.email || "user@email.com",
+
+          comment: document.getElementById("cText").value.trim(),
+
+          product: parseInt(productId),
+
+          date: new Date().toISOString().split("T")[0],
+        };
+
+        try {
+          const res = await fetch(`${API_BASE}/comments/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          if (res.ok) {
+            commentForm.reset();
+
+            showToast("Comentario publicado");
+
+            loadComments();
+          }
+        } catch (err) {
+          console.error("Error posting comment:", err);
+
+          showToast("No se pudo enviar el comentario");
+        }
+      };
+    }
+
+    loadDetail();
+    loadComments();
   }
 
-  loadDetail();
-  loadComments();
+  /* =========================
+     5. LOGOUT BUTTON
+  ========================= */
 
-}
+  const logoutBtn = document.getElementById("logoutBtn");
+
+  if (logoutBtn) {
+    logoutBtn.onclick = () => {
+      sessionStorage.clear();
+
+      window.location.href = "index.html";
+    };
+  }
 
 
 /* =========================
-   5. LOGOUT BUTTON
+   6. REPORT GENERATOR
 ========================= */
 
-const logoutBtn = document.getElementById('logoutBtn');
+const generateReportBtn = document.getElementById("generateReportBtn");
 
-if (logoutBtn) {
+if (generateReportBtn) {
 
-  logoutBtn.onclick = () => {
+  generateReportBtn.addEventListener("click", function () {
 
-    sessionStorage.clear();
+    const type = document.getElementById("reportType").value;
+    const format = document.getElementById("reportFormat").value;
 
-    window.location.href = 'index.html';
+    const url = `http://127.0.0.1:8000/api/reports/generate-reports?type=${type}&formate=${format}`;
 
-  };
+    window.open(url, "_blank");
+
+  });
 
 }
 
+/* =========================
+   7. LOGIN MODAL REDIRECTS
+========================= */
+
+const registerBtn = document.getElementById("registerBtn");
+const loginBtn = document.getElementById("loginBtn");
+
+if (registerBtn) {
+  registerBtn.addEventListener("click", () => {
+    window.location.href = "registro.html";
+  });
+}
+
+if (loginBtn) {
+  loginBtn.addEventListener("click", () => {
+    window.location.href = "index.html";
+  });
+}
+
+
+
+
+
+
+
 });
 
-document.getElementById("generateReportBtn").addEventListener("click", function () {
 
-  const type = document.getElementById("reportType").value;
-  const format = document.getElementById("reportFormat").value;
-
-  const url = `http://127.0.0.1:8000/api/reports/generate-reports?type=${type}&format=${format}`;
-
-  window.open(url, "_blank");
-
-});
