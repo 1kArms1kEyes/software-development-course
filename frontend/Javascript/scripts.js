@@ -557,3 +557,14 @@ if (logoutBtn) {
 }
 
 });
+
+document.getElementById("generateReportBtn").addEventListener("click", function () {
+
+  const type = document.getElementById("reportType").value;
+  const format = document.getElementById("reportFormat").value;
+
+  const url = `http://127.0.0.1:8000/api/reports/generate-reports?type=${type}&format=${format}`;
+
+  window.open(url, "_blank");
+
+});

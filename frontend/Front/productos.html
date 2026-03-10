@@ -188,9 +188,12 @@ data-bs-target="#productModal">
 
 
         <div class="d-flex justify-content-end mt-3">
-          <button id="generateReportsBtn" class="btn btn-success">
-            Generar Reportes
-          </button>
+<button id="generateReportsBtn"
+class="btn btn-success"
+data-bs-toggle="modal"
+data-bs-target="#reportModal">
+  Generar Reportes
+</button>
         </div>
 
 
@@ -806,7 +809,63 @@ Guardar
 
   <!-- END DELETE CONFIRM MODAL -->
 
+<!-- REPORTS MODAL -->
+<div class="modal fade" id="reportModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
 
+      <div class="modal-header">
+        <h5 class="modal-title">Generar Reportes</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <div class="mb-3">
+          <label class="form-label">Tipo de Reporte</label>
+
+<select class="form-select" id="reportType">
+
+  <option value="products">
+    Reporte de Productos
+  </option>
+
+  <option value="comments">
+    Reporte de Comentarios
+  </option>
+
+</select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Formato</label>
+
+          <select class="form-select" id="reportFormat">
+            <option value="excel">Excel</option>
+            <option value="pdf">PDF</option>
+          </select>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+
+        <button class="btn btn-secondary"
+        data-bs-dismiss="modal">
+          Cancelar
+        </button>
+
+        <button class="btn btn-success"
+        id="generateReportBtn">
+          Generar
+        </button>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+<!-- END REPORTS MODAL -->
 
 
 
