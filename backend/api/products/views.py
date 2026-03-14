@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 
 from .filters import ProductFilter
+from .serializers import *
 from .models import (
     Product,
     Brand,
@@ -12,7 +13,6 @@ from .models import (
     MaxSupportNetwork,
     OperatingSystem
 )
-from .serializers import ProductSerializer
 
 
 class ProductViewSet(ModelViewSet):
@@ -108,3 +108,23 @@ class ProductFilterOptionsView(APIView):
         }
 
         return Response(data)
+
+
+class BrandViewSet(ModelViewSet):
+    queryset = Brand.objects.all()
+    serializer_class = BrandsSerializer
+
+
+class ColorViewSet(ModelViewSet):
+    queryset = Color.objects.all()
+    serializer_class = ColorsSerializer
+
+
+class MaxSupportNetworkViewSet(ModelViewSet):
+    queryset = MaxSupportNetwork.objects.all()
+    serializer_class = MaxSupportNetworksSerializer
+
+
+class OperatingSystemViewSet(ModelViewSet):
+    queryset = OperatingSystem.objects.all()
+    serializer_class = OperatingSystemsSerializer

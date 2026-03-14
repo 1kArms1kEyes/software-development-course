@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product
+from .models import *
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -27,3 +27,27 @@ class ProductSerializer(serializers.ModelSerializer):
             'max_supported_network_id'] = instance.max_supported_network.id if instance.max_supported_network else None
 
         return representation
+
+
+class BrandsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Brand
+        fields = "__all__"
+
+
+class ColorsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Color
+        fields = "__all__"
+
+
+class MaxSupportNetworksSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MaxSupportNetwork
+        fields = "__all__"
+
+
+class OperatingSystemsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OperatingSystem
+        fields = "__all__"
